@@ -1,0 +1,29 @@
+import os
+
+DEFAULT_PATH = os.getenv("HOME") + "/.ssh/"
+PATH_TO_SSH_FOLDER = os.getenv("PATH_TO_SSH_FOLDER", DEFAULT_PATH)
+PATH_TO_KEY_FILE = os.getenv("PATH_TO_KEY_FILE", )
+PATH_TO_OUTPUT_FOLDER = os.getenv("PATH_TO_OUTPUT_FOLDER", )
+
+
+SERVERS = [
+    {
+        "host": "<example_local_ip_with_jump>",
+        "user": "root",
+        "key_filename": PATH_TO_KEY_FILE,
+        "os": "linux",
+        "path_to_output": PATH_TO_OUTPUT_FOLDER,
+        "jump": {
+            "host": "<example_jump_ip_with_jump>",
+            "user": "root",
+            "key_filename": PATH_TO_KEY_FILE
+        }
+    },
+    {
+        "host": "<example_external_ip>",
+        "user": "root",
+        "key_filename": PATH_TO_KEY_FILE,
+        "os": "linux",
+        "path_to_output": PATH_TO_OUTPUT_FOLDER,
+    },
+]

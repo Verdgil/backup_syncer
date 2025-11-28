@@ -1,0 +1,10 @@
+import os
+
+BASE_DIRECTORY_FOR_CHECK = os.getenv("BASE_DIRECTORY_FOR_CHECK", "/data")
+OUTPUT_DIRECTORY = os.getenv("OUTPUT_DIRECTORY", "./output")
+GROUPS = [
+    {
+        "name": "default",
+        "path": BASE_DIRECTORY_FOR_CHECK,
+    }
+]
