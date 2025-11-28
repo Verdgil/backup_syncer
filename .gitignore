@@ -164,3 +164,4 @@ checker/config.py
 service/config.py
 checker/output
 service/output
+push_to_servers.sh
