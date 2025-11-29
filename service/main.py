@@ -7,7 +7,7 @@ import hashlib
 from functools import lru_cache
 from multiprocessing import Pool
 
-from config import OUTPUT_DIRECTORY, GROUPS
+from config import OUTPUT_DIRECTORY, GROUPS, MAX_THREADS
 
 # Команды для расчета контрольных сумм
 checksum_cmds = {
@@ -26,7 +26,9 @@ def exec_command(command: list[str]) -> str:
     return result.stdout
 
 
-def get_physical_cores():
+def get_threads_count():
+    if MAX_THREADS is not None:
+        return MAX_THREADS
     try:
         output = subprocess.check_output(
             ['lscpu'],
@@ -41,11 +43,11 @@ def get_physical_cores():
             elif 'Socket(s):' in line:
                 sockets = int(line.split(':')[1].strip())
         if cores_per_socket and sockets:
-            return cores_per_socket * sockets
+            return (cores_per_socket * sockets) // 2
     except Exception:
         pass
     # fallback: вернем логические ядра
-    return os.cpu_count() or 4
+    return (os.cpu_count() or 4) // 2
 
 @lru_cache
 def get_server_checksum_cmd():
@@ -86,7 +88,7 @@ def get_checksums(files):
     checksums = {}
     errors = {}
     results = []
-    with Pool(get_physical_cores() // 2) as pool:
+    with Pool(get_threads_count()) as pool:
         results.extend(pool.imap(calculate_one_file, files))
     for checksum, error in results:
         checksums.update(checksum)
