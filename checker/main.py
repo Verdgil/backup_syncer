@@ -135,11 +135,15 @@ def get_last_file_data(server, group_name: str, group_path: str):
 
 
 def do_lost_file(current_date=None, write=True):
-    groups_set = {(group["name"], group["path"]) for server in SERVERS for group in server["groups"]}
-    for group_name, path in groups_set:
+    groups_set = {group["name"] for server in SERVERS for group in server["groups"]}
+    for group_name in groups_set:
         all_checksums = {}
         for server in SERVERS:
-            files = get_last_file_data(server, group_name, path)
+            if "groups_path" not in server:
+                raise
+            if group_name not in server["groups_path"].keys():
+                continue
+            files = get_last_file_data(server, group_name, server["groups_path"][group_name])
             all_checksums[server["host"]] = files
 
         lost_files = find_lost_files(all_checksums)
@@ -154,13 +158,13 @@ def do_mismatch_sum(current_date=None, write=True):
     :param current_date: Текущая дата для именования файла.
     :param write: Флаг для записи результатов в файл.
     """
-    groups_set = {(group["name"], group["path"]) for server in SERVERS for group in server["groups"]}
-    for group_name, path in groups_set:
+    groups_set = {group["name"] for server in SERVERS for group in server["groups"]}
+    for group_name in groups_set:
         all_checksums = {}
         for server in SERVERS:
-            if group_name not in {group["name"] for group in server["groups"]}:
+            if group_name not in server["groups_path"].keys():
                 continue
-            files = get_last_file_data(server, group_name, path)
+            files = get_last_file_data(server, group_name, server["groups_path"][group_name])
             all_checksums[server["host"]] = files
 
 
@@ -188,6 +192,7 @@ def set_groups():
         groups_data_str = ssh_exec_command(server, f"cat {server['path_to_output']}/groups.json")
         groups = json.loads(groups_data_str)
         server["groups"] = groups
+        server["groups_path"] = {group["name"]: group["path"] for group in server["groups"]}
 
 
 # Основной процесс
