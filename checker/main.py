@@ -61,12 +61,18 @@ def get_jump(server):
 
 
 # Поиск отсутствующих файлов
-def find_lost_files(file_lists):
+def find_lost_files(file_lists, group_name):
     all_files = set().union(*[set(files["checksums"].keys()) for files in file_lists.values()])
     lost_files = []
 
     for file in all_files:
-        file_presence = {server["host"]: (file in file_lists[server["host"]]["files"]) for server in SERVERS}
+        file_presence = {
+            server["host"]: (
+                    file in file_lists[server["host"]]["files"]
+            )
+            for server in SERVERS
+            if group_name in server["groups_path"].keys()
+        }
         if not all(file_presence.values()):
             lost_files.append({"filename": file, **file_presence})
 
@@ -74,12 +80,18 @@ def find_lost_files(file_lists):
 
 
 # Поиск несовпадений контрольных сумм
-def find_mismatch_sums(all_checksums):
+def find_mismatch_sums(all_checksums, group_name):
     mismatch_sum = []
     all_files = set().union(*[set(files["checksums"].keys()) for files in all_checksums.values()])
 
     for file in all_files:
-        file_checksums = {server["host"]: all_checksums[server["host"]]["checksums"].get(file, None) for server in SERVERS}
+        file_checksums = {
+            server["host"]: (
+                all_checksums[server["host"]]["checksums"].get(file, None)
+            )
+            for server in SERVERS
+            if group_name in server["groups_path"].keys()
+        }
         if len(set(checksum["sha256"] for checksum in file_checksums.values() if checksum)) > 1 or \
                 len(set(checksum["md5"] for checksum in file_checksums.values() if checksum)) > 1:
             file_checksums_readable = []
@@ -136,6 +148,7 @@ def get_last_file_data(server, group_name: str, group_path: str):
 
 def do_lost_file(current_date=None, write=True):
     groups_set = {group["name"] for server in SERVERS for group in server["groups"]}
+    group_lost = {group: [] for group in groups_set}
     for group_name in groups_set:
         all_checksums = {}
         for server in SERVERS:
@@ -146,9 +159,11 @@ def do_lost_file(current_date=None, write=True):
             files = get_last_file_data(server, group_name, server["groups_path"][group_name])
             all_checksums[server["host"]] = files
 
-        lost_files = find_lost_files(all_checksums)
+        lost_files = find_lost_files(all_checksums, group_name)
         if write and current_date:
             write_results(f"{group_name}/lost_files_{current_date}.json", lost_files)
+        group_lost[group_name].extend(lost_files)
+    return group_lost
 
 
 def do_mismatch_sum(current_date=None, write=True):
@@ -159,6 +174,7 @@ def do_mismatch_sum(current_date=None, write=True):
     :param write: Флаг для записи результатов в файл.
     """
     groups_set = {group["name"] for server in SERVERS for group in server["groups"]}
+    group_checksums = {group: [] for group in groups_set}
     for group_name in groups_set:
         all_checksums = {}
         for server in SERVERS:
@@ -168,10 +184,12 @@ def do_mismatch_sum(current_date=None, write=True):
             all_checksums[server["host"]] = files
 
 
-        mismatch_sum = find_mismatch_sums(all_checksums)
+        mismatch_sum = find_mismatch_sums(all_checksums, group_name)
 
         if write and current_date:
             write_results(f"{group_name}/mismatch_sum_{current_date}.json", mismatch_sum)
+        group_checksums[group_name].extend(mismatch_sum)
+    return group_checksums
 
 
 def do_check_execution_time():
