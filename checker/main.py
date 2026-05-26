@@ -11,6 +11,15 @@ from paramiko.client import SSHClient
 from decorators import retry, lru_cache_custom
 from config import SERVERS
 
+RED_TEXT = lambda s: f"\033[91m{s}\033[0m"
+GREEN_TEXT = lambda s: f"\033[92m{s}\033[0m"
+YELLOW_TEXT = lambda s: f"\033[93m{s}\033[0m"
+BLUE_TEXT = lambda s: f"\033[94m{s}\033[0m"
+PURPLE_TEXT = lambda s: f"\033[95m{s}\033[0m"
+CYAN_TEXT = lambda s: f"\033[96m{s}\033[0m"
+GRAY_TEXT = lambda s: f"\033[97m{s}\033[0m"
+BLACK_TEXT = lambda s: f"\033[90m{s}\033[0m"
+
 
 def escape_filename(filename):
     return re.sub(r"([\\\s\"'()])", r"\\\1", filename)
@@ -214,16 +223,29 @@ def set_groups():
 
 
 # Основной процесс
-def main(is_check_lost: bool = True, is_check_sums: bool = True, is_check_duplicate: bool = True):
+def main(
+    is_check_lost: bool = True,
+    is_check_sums: bool = True,
+    is_check_duplicate: bool = True,
+    is_check_time: bool = True,
+    is_silent: bool = False,
+):
     current_date = datetime.now().strftime("%Y-%m-%d")
     set_groups()
-    do_check_execution_time()
+    if is_check_time:
+        do_check_execution_time()
     if is_check_lost:
-        do_lost_file(current_date)
+        lost = do_lost_file(current_date)
     if is_check_sums:
-        do_mismatch_sum(current_date)
+        sums = do_mismatch_sum(current_date)
     if is_check_duplicate:
         ...
+    if not is_silent:
+        for group in set(lost.keys()).union(sums.keys()):
+            if len(lost[group]) == 0 and len(sums[group]) == 0:
+                print(f"{GREEN_TEXT('GOOD:')} {BLUE_TEXT(group)} is fine")
+            else:
+                print(f"{RED_TEXT('BAD:')} {PURPLE_TEXT(group)} isn't fine")
 
 
 if __name__ == "__main__":
@@ -246,10 +268,26 @@ if __name__ == "__main__":
         default=True,
         help="Disable check for duplicate files"
     )
+    parser.add_argument(
+        "-t", "--check_time",
+        action="store_false",
+        default=False,
+        help="Enable check for execution time"
+    )
+    parser.add_argument(
+        "-S", "--silent",
+        action="store_true",
+        default=False,
+        help="Run silent (without output)"
+    )
 
     args = parser.parse_args()
+    if args.silent:
+        args.check_time = False
     main(
         is_check_lost=args.no_check_lost,
         is_check_sums=args.no_check_sums,
         is_check_duplicate=args.no_check_duplicates,
+        is_check_time=args.check_time,
+        is_silent=args.silent,
     )
