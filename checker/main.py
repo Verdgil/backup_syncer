@@ -285,11 +285,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     if args.silent:
-        args.check_time = False
+        args.no_check_time = True
     main(
         is_check_lost=args.no_check_lost,
         is_check_sums=args.no_check_sums,
         is_check_duplicate=args.no_check_duplicates,
-        is_check_time=args.check_time,
+        is_check_time=args.no_check_time,
         is_silent=args.silent,
     )
