@@ -271,9 +271,9 @@ if __name__ == "__main__":
         help="Disable check for duplicate files"
     )
     parser.add_argument(
-        "-t", "--no-check_time",
-        action="store_false",
-        default=True,
+        "-t", "--check_time",
+        action="store_true",
+        default=False,
         help="Enable check for execution time"
     )
     parser.add_argument(
@@ -285,11 +285,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     if args.silent:
-        args.no_check_time = True
+        args.check_time = False
     main(
         is_check_lost=args.no_check_lost,
         is_check_sums=args.no_check_sums,
         is_check_duplicate=args.no_check_duplicates,
-        is_check_time=args.no_check_time,
+        is_check_time=args.check_time,
         is_silent=args.silent,
     )
