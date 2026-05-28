@@ -232,6 +232,8 @@ def main(
 ):
     current_date = datetime.now().strftime("%Y-%m-%d")
     set_groups()
+    lost = {}
+    sums = {}
     if is_check_time:
         do_check_execution_time()
     if is_check_lost:
@@ -269,9 +271,9 @@ if __name__ == "__main__":
         help="Disable check for duplicate files"
     )
     parser.add_argument(
-        "-t", "--check_time",
+        "-t", "--no-check_time",
         action="store_false",
-        default=False,
+        default=True,
         help="Enable check for execution time"
     )
     parser.add_argument(
